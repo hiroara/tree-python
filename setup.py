@@ -83,7 +83,7 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['wheel'],
-        'test': [],
+        'test': ['pytest', 'pylama'],
     },
 
     setup_requires=['pytest-runner'],

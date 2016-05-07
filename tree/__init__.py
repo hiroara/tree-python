@@ -1,4 +1,4 @@
-from .structs import Tree, Forest
+from .structs import Tree, LeafNode, NoneNode
 
 
 def main():
