@@ -1,0 +1,9 @@
+{
+  "name": "tree-python",
+  "engines" : { "node" : "4.4.2" },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-shell": "^0.5.2"
+  }
+}
