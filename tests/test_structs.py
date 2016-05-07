@@ -2,6 +2,7 @@ import pytest
 
 from tree import Forest, Tree
 
+
 class TestTree:
     @pytest.fixture
     def data1(self):
