@@ -1,1 +1,1 @@
-from .json import parse as parse_json
+from .json_parser import parse as parse_json

@@ -8,6 +8,9 @@ class Node:
     def get_child(self, key):
         return NoneNode()
 
+    def __str__(self):
+        return "<{}>".format(self.value)
+
 
 class Tree(Node):
     def __init__(self, value, children):
@@ -20,6 +23,9 @@ class Tree(Node):
     def get_child(self, key):
         return next((node for node in self.children if node.value == key), NoneNode())
 
+    def __str__(self):
+        return '<T: {} (with {} nodes)>'.format(self.value, len(self.children))
+
 
 class LeafTree(Tree):
     def __init__(self, value, leaf):
@@ -28,7 +34,8 @@ class LeafTree(Tree):
 
 
 class LeafNode(Node):
-    pass
+    def __str__(self):
+        return '<L: {}>'.format(self.value)
 
 
 class NoneNode(Node):
