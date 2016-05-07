@@ -1,6 +1,6 @@
 import pytest
 
-from tree import Tree, LeafNode, NoneNode
+from tree import build_tree, Tree, LeafTree, LeafNode, NoneNode
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def data1():
 
 @pytest.fixture
 def tree1(data1):
-    return Tree(None, data1)
+    return build_tree(data1)
 
 
 class TestForest:
@@ -36,7 +36,7 @@ class TestForest:
 
     def test_get(self, tree1):
         subtree = tree1.get('a/b/c')
-        assert type(subtree) is Tree
+        assert type(subtree) is LeafTree
         assert subtree.value is 'c'
         leaf = subtree.children[0]
         assert type(leaf) is LeafNode

@@ -10,18 +10,20 @@ class Node:
 
 
 class Tree(Node):
-    def __init__(self, value, data):
+    def __init__(self, value, children):
         super().__init__(value)
-        if type(data) is dict:
-            self.children = [Tree(key, value) for (key, value) in data.items()]
-        else:
-            self.children = [LeafNode(data)]
+        self.children = children
 
     def get(self, path):
         return reduce(lambda node, key: node.get_child(key), path.split('/'), self)
 
     def get_child(self, key):
         return next((node for node in self.children if node.value == key), NoneNode())
+
+
+class LeafTree(Tree):
+    def __init__(self, value, leaf):
+        super().__init__(value, [leaf])
 
 
 class LeafNode(Node):
