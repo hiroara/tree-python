@@ -1,6 +1,10 @@
 from tree import Node, Tree
 
 
+def pretty_print(node):
+    print(pretty_text(node))
+
+
 def pretty_text(node, prefix='+ ', children_prefix='   '):
     return _build_printer(node, prefix, children_prefix).pretty_text()
 

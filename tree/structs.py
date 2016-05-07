@@ -11,6 +11,12 @@ class Node:
     def __str__(self):
         return "<{}>".format(self.value)
 
+    def __eq__(self, other):
+        return isinstance(other, Node) and other.value == self.value
+
+    def __len__(self):
+        return 1
+
 
 class Tree(Node):
     def __init__(self, value, children):
@@ -25,6 +31,12 @@ class Tree(Node):
 
     def __str__(self):
         return '<T: {} (with {} nodes)>'.format(self.value, len(self.children))
+
+    def __eq__(self, other):
+        return isinstance(other, Tree) and super().__eq__(other) and other.children == self.children
+
+    def __len__(self):
+        return super().__len__() + reduce(lambda total, node: total + len(node), self.children, 0)
 
 
 class LeafTree(Tree):
