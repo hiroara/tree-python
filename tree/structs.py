@@ -17,6 +17,9 @@ class Node:
     def __len__(self):
         return 1
 
+    def __hash__(self):
+        return 19 + hash(self.value)
+
 
 class Tree(Node):
     def __init__(self, value, children):
@@ -37,6 +40,9 @@ class Tree(Node):
 
     def __len__(self):
         return super().__len__() + reduce(lambda total, node: total + len(node), self.children, 0)
+
+    def __hash__(self):
+        return 13 + super().__hash__() + sum(hash(child) for child in self.children)
 
 
 class LeafTree(Tree):

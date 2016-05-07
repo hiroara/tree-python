@@ -1,4 +1,4 @@
-from functools import reduce
+from functools import reduce, lru_cache
 
 from tree import Tree
 
@@ -36,11 +36,15 @@ class Forest:
     def __eq__(self, other):
         return isinstance(other, Forest) and self.trees == other.trees
 
+    def __hash__(self):
+        return 17 + sum(hash(tree) for tree in self.trees)
+
 
 def distance(tree1, tree2):
     return __distance(Forest([tree1]), Forest([tree2]))
 
 
+@lru_cache(maxsize=256)
 def __distance(forest1, forest2):
     if forest1 == forest2:
         return 0
