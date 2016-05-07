@@ -24,6 +24,7 @@ class Tree(Node):
 class LeafTree(Tree):
     def __init__(self, value, leaf):
         super().__init__(value, [leaf])
+        self.leaf = leaf
 
 
 class LeafNode(Node):
