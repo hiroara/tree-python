@@ -13,33 +13,6 @@ def tree1():
     })
 
 
-@pytest.fixture
-def tree2():
-    return build_tree({
-        'a': {
-            'c': 1
-        }
-    })
-
-
-@pytest.fixture
-def tree3():
-    return build_tree({
-        'b': 1
-    })
-
-
-@pytest.fixture
-def tree4():
-    return build_tree({
-        'a': {
-            'b': {
-                'c': 3
-            }
-        }
-    })
-
-
 def test_tree_edit_distance_from_head(tree1, tree2):
     distance = tree_edit_distance(tree1, tree2)
     assert distance == 1
