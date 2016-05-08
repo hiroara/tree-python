@@ -25,6 +25,7 @@ class Tree(Node):
     def __init__(self, value, children):
         super().__init__(value)
         self.children = children
+        self.__length = sum(len(child) for child in children)
 
     def get(self, path):
         return reduce(lambda node, key: node.get_child(key), path.split('/'), self)
@@ -39,7 +40,7 @@ class Tree(Node):
         return isinstance(other, Tree) and super().__eq__(other) and other.children == self.children
 
     def __len__(self):
-        return super().__len__() + reduce(lambda total, node: total + len(node), self.children, 0)
+        return super().__len__() + self.__length
 
     def __hash__(self):
         return 13 + super().__hash__() + sum(hash(child) for child in self.children)
