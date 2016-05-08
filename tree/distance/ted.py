@@ -54,18 +54,14 @@ class Distance:
         return self.tree.value
 
 
-class CalculationNode:
-    def __init__(self, value, parent):
-        self.value = value
+class CalculationTree:
+    memo = {}
+
+    def __init__(self, parent, cache_key):
+        self.__cache_key = '/'.join([type(self).__name__, cache_key])
+        memo = type(self).memo
+        self.__value = memo[self.__cache_key] if self.__cache_key in memo else None
         self.parent = parent
-
-    def __iter__(self):
-        return Visitor(self)
-
-
-class CalculationTree(CalculationNode):
-    def __init__(self, parent):
-        super().__init__(None, parent)
         self.built = False
         self._children = []
 
@@ -79,14 +75,26 @@ class CalculationTree(CalculationNode):
         pass
 
     @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, new_value):
+        self.__value = new_value
+        type(self).memo[self.__cache_key] = new_value
+
+    @property
     def children(self):
         self.build()
         return self._children if self.value is None else []
 
+    def __iter__(self):
+        return Visitor(self)
+
 
 class DistanceTree(CalculationTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent)
+        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
         self.lforest = lforest
         self.rforest = rforest
 
@@ -119,7 +127,7 @@ class CostSummingTree(CalculationTree):
 
 class HeadDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent)
+        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
         self.cost = self._cost(lforest, rforest)
         self.lforest = lforest
         self.rforest = rforest
@@ -137,7 +145,7 @@ class HeadDistanceTree(CostSummingTree):
 
 class LeftDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent)
+        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
         self.cost = self._cost(lforest, Forest())
         self.lforest = lforest
         self.rforest = rforest
