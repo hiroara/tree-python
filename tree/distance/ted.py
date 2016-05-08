@@ -64,12 +64,95 @@ class CalculationNode:
 
 
 class CalculationTree(CalculationNode):
+    def __init__(self, parent):
+        super().__init__(None, parent)
+        self.built = False
+        self._children = []
+
+    def build(self):
+        if self.built:
+            return
+        self._build()
+        self.built = True
+
     def calculate(self):
         pass
 
     @property
     def children(self):
-        return []
+        self.build()
+        return self._children if self.value is None else []
+
+
+class DistanceTree(CalculationTree):
+    def __init__(self, lforest, rforest, parent):
+        super().__init__(parent)
+        self.lforest = lforest
+        self.rforest = rforest
+
+    def _build(self):
+        if self.lforest == self.rforest:
+            self.value = 0
+        elif not self.lforest.trees or not self.rforest.trees:
+            self.value = reduce(lambda total, tree: total + len(tree), self.lforest.trees + self.rforest.trees, 0)
+        else:
+            self._children = [
+                HeadDistanceTree(self.lforest, self.rforest, self),
+                LeftDistanceTree(self.lforest, self.rforest, self),
+                RightDistanceTree(self.lforest, self.rforest, self),
+            ]
+
+    def calculate(self):
+        if self.value is None:
+            self.value = min(child.value for child in self.children)
+            self._children = []
+
+
+class CostSummingTree(CalculationTree):
+    def calculate(self):
+        if self.value is None:
+            self.value = self.cost + sum(child.value for child in self.children)
+
+    def _cost(self, lforest, rforest):
+        return 0 if lforest.head_value == rforest.head_value else 1
+
+
+class HeadDistanceTree(CostSummingTree):
+    def __init__(self, lforest, rforest, parent):
+        super().__init__(parent)
+        self.cost = self._cost(lforest, rforest)
+        self.lforest = lforest
+        self.rforest = rforest
+
+    def _build(self):
+        self._children = [
+            DistanceTree(self.lforest.head_forest, self.rforest.head_forest, self),
+            DistanceTree(self.lforest.tail_forest, self.rforest.tail_forest, self),
+        ]
+
+    def calculate(self):
+        super().calculate()
+        self._children = []
+
+
+class LeftDistanceTree(CostSummingTree):
+    def __init__(self, lforest, rforest, parent):
+        super().__init__(parent)
+        self.cost = self._cost(lforest, Forest())
+        self.lforest = lforest
+        self.rforest = rforest
+
+    def _build(self):
+        self._children = [DistanceTree(self.lforest.except_head_forest, self.rforest, self)]
+
+    def calculate(self):
+        super().calculate()
+        self._children = []
+
+
+class RightDistanceTree(LeftDistanceTree):
+    def __init__(self, lforest, rforest, parent):
+        super().__init__(rforest, lforest, parent)  # reverse
 
 
 class Visitor:
@@ -105,62 +188,3 @@ class Visitor:
             self.__fall()
         else:
             self.current = self.current.parent
-
-
-class DistanceTree(CalculationTree):
-    def __init__(self, lforest, rforest, parent):
-        if lforest == rforest:
-            super().__init__(0, parent)
-        elif not lforest.trees or not rforest.trees:
-            distance = reduce(lambda total, tree: total + len(tree), lforest.trees + rforest.trees, 0)
-            super().__init__(distance, parent)
-        else:
-            super().__init__(None, parent)
-            self.head = HeadDistanceTree(lforest, rforest, self)
-            self.left = LeftDistanceTree(lforest, rforest, self)
-            self.right = RightDistanceTree(lforest, rforest, self)
-
-    @property
-    def children(self):
-        return [self.head, self.left, self.right] if self.value is None else []
-
-    def calculate(self):
-        if self.value is None:
-            self.value = min(child.value for child in self.children)
-
-
-class CostSummingTree(CalculationTree):
-    def calculate(self):
-        if self.value is None:
-            self.value = self.cost + sum(child.value for child in self.children)
-
-    def _cost(self, lforest, rforest):
-        return 0 if lforest.head_value == rforest.head_value else 1
-
-
-class HeadDistanceTree(CostSummingTree):
-    def __init__(self, lforest, rforest, parent):
-        super().__init__(None, parent)
-        self.cost = self._cost(lforest, rforest)
-        self.head = DistanceTree(lforest.head_forest, rforest.head_forest, self)
-        self.tail = DistanceTree(lforest.tail_forest, rforest.tail_forest, self)
-
-    @property
-    def children(self):
-        return [self.head, self.tail] if self.value is None else []
-
-
-class LeftDistanceTree(CostSummingTree):
-    def __init__(self, lforest, rforest, parent):
-        super().__init__(None, parent)
-        self.cost = self._cost(lforest, Forest())
-        self.tail = DistanceTree(lforest.except_head_forest, rforest, self)
-
-    @property
-    def children(self):
-        return [self.tail] if self.value is None else []
-
-
-class RightDistanceTree(LeftDistanceTree):
-    def __init__(self, lforest, rforest, parent):
-        super().__init__(rforest, lforest, parent)  # reverse
