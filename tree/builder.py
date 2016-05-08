@@ -28,6 +28,8 @@ def __is_as_dict(data):
 
 
 def __is_as_list(data):
+    if isinstance(data, str):
+        return False
     try:
         return callable(getattr(data, '__iter__'))
     except AttributeError:
