@@ -1,6 +1,14 @@
 from tree import Tree, LeafNode
 
 
+def preorder(tree):
+    return PreorderWalker(tree)
+
+
+def postorder(tree):
+    return PostorderWalker(tree)
+
+
 class Walker:
     def __init__(self, tree):
         self.root = tree
@@ -20,6 +28,9 @@ class Walker:
         index = parent.children.index(self.current)
         if len(parent.children) > index + 1:
             return index + 1
+
+    def __iter__(self):
+        return self
 
 
 class PreorderWalker(Walker):
