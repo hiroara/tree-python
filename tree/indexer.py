@@ -1,4 +1,4 @@
-class NodeCollection:
+class NodeIndexer:
     def __init__(self, walker):
         self.walker = walker
         self.__nodes = []

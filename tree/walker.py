@@ -1,5 +1,5 @@
 from tree import Tree, LeafNode
-from tree.collection import NodeCollection
+from tree.indexer import NodeIndexer
 
 
 def preorder(tree):
@@ -16,8 +16,8 @@ class Walker:
         self.current = tree
         self.route = []
 
-    def collection(self):
-        return NodeCollection(self)
+    def indexer(self):
+        return NodeIndexer(self)
 
     def _walk_to(self, node):
         self.route.append(self.current)
