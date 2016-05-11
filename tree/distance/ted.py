@@ -1,43 +1,57 @@
-from functools import reduce
-
-from tree import Tree
+from tree import postorder
 
 
 class Forest:
-    def __init__(self, trees=[]):
-        self.trees = trees
-
-    @property
-    def head(self):
-        return self.trees[-1] if self.trees else None
+    def __init__(self, tree, indexer, indices):
+        assert indices[1] >= indices[0]
+        self.tree = tree
+        self.indexer = indexer
+        self.indices = indices
+        self.head = self.__find_head()
+        self.__first_leaf_index = self.__find_first_leaf_index() if self.head is not None else None
 
     @property
     def head_forest(self):
-        if isinstance(self.head, Tree):
-            return Forest(self.head.children)
+        if self.__first_leaf_index is not None and self.__first_leaf_index < self.indices[1]:
+            return self.child((self.__first_leaf_index, self.indices[1] - 1))
         else:
-            return Forest()
+            return self.child()
 
     @property
     def tail_forest(self):
-        return Forest(self.trees[:-1]) if len(self.trees) > 1 else Forest()
+        if self.__first_leaf_index is not None:
+            return self.child((self.indices[0], self.__first_leaf_index))
+        else:
+            return self.child()
 
     @property
     def except_head_forest(self):
-        if isinstance(self.head, Tree):
-            return Forest(self.trees[:-1] + self.head.children)
+        if len(self):
+            return self.child((self.indices[0], self.indices[1] - 1))
         else:
-            return Forest(self.trees[:-1])
+            return self.child()
+
+    def child(self, indices=(0, 0)):
+        return Forest(self.tree, self.indexer, indices)
 
     @property
-    def head_value(self):
-        return self.head.value if self.head else None
+    def cache_key(self):
+        return ':'.join([str(self.indices[0]), str(self.indices[1])])
+
+    def all_nodes(self):
+        return self.indexer[self.indices[0]:self.indices[1]]
 
     def __eq__(self, other):
-        return isinstance(other, Forest) and self.trees == other.trees
+        return isinstance(other, Forest) and len(self) == len(other) and self.all_nodes() == other.all_nodes()
 
-    def __hash__(self):
-        return 17 + sum(hash(tree) for tree in self.trees)
+    def __len__(self):
+        return self.indices[1] - self.indices[0]
+
+    def __find_head(self):
+        return self.indexer[self.indices[1] - 1] if self.indices[1] > self.indices[0] else None
+
+    def __find_first_leaf_index(self):
+        return self.indexer.index(next(postorder(self.head)))
 
 
 def distance(tree1, tree2):
@@ -46,7 +60,9 @@ def distance(tree1, tree2):
 
 class Distance:
     def __init__(self, ltree, rtree):
-        self.tree = DistanceTree(Forest([ltree]), Forest([rtree]), None)
+        lforest = Forest(ltree, postorder(ltree).indexer(), (0, len(ltree)))
+        rforest = Forest(rtree, postorder(rtree).indexer(), (0, len(rtree)))
+        self.tree = DistanceTree(lforest, rforest, None)
 
     def calculate(self):
         for node in self.tree:
@@ -55,12 +71,10 @@ class Distance:
 
 
 class CalculationTree:
-    memo = {}
-
     def __init__(self, parent, cache_key):
-        self.__cache_key = '/'.join([type(self).__name__, cache_key])
-        memo = type(self).memo
-        self.__value = memo[self.__cache_key] if self.__cache_key in memo else None
+        self.cache_key = '/'.join([type(self).__name__, cache_key])
+        self.cache = parent.cache if parent else {}
+        self.__value = self.cache[self.cache_key] if self.cache_key in self.cache else None
         self.parent = parent
         self.built = False
         self._children = []
@@ -81,7 +95,7 @@ class CalculationTree:
     @value.setter
     def value(self, new_value):
         self.__value = new_value
-        type(self).memo[self.__cache_key] = new_value
+        self.cache[self.cache_key] = new_value
 
     @property
     def children(self):
@@ -94,15 +108,15 @@ class CalculationTree:
 
 class DistanceTree(CalculationTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
+        super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
         self.lforest = lforest
         self.rforest = rforest
 
     def _build(self):
         if self.lforest == self.rforest:
             self.value = 0
-        elif not self.lforest.trees or not self.rforest.trees:
-            self.value = reduce(lambda total, tree: total + len(tree), self.lforest.trees + self.rforest.trees, 0)
+        elif not len(self.lforest) or not len(self.rforest):
+            self.value = max(len(self.lforest), len(self.rforest))
         else:
             self._children = [
                 HeadDistanceTree(self.lforest, self.rforest, self),
@@ -120,14 +134,20 @@ class CostSummingTree(CalculationTree):
     def calculate(self):
         if self.value is None:
             self.value = self.cost + sum(child.value for child in self.children)
+            self._children = []
 
     def _cost(self, lforest, rforest):
-        return 0 if lforest.head_value == rforest.head_value else 1
+        if lforest.head is None and rforest.head is None:
+            return 0
+        elif lforest.head is None or rforest.head is None:
+            return 1
+        else:
+            return 0 if lforest.head.value == rforest.head.value else 1
 
 
 class HeadDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
+        super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
         self.cost = self._cost(lforest, rforest)
         self.lforest = lforest
         self.rforest = rforest
@@ -138,24 +158,16 @@ class HeadDistanceTree(CostSummingTree):
             DistanceTree(self.lforest.tail_forest, self.rforest.tail_forest, self),
         ]
 
-    def calculate(self):
-        super().calculate()
-        self._children = []
-
 
 class LeftDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
-        super().__init__(parent, '/'.join([str(hash(lforest)), str(hash(rforest))]))
-        self.cost = self._cost(lforest, Forest())
+        super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
+        self.cost = self._cost(lforest, rforest.child())
         self.lforest = lforest
         self.rforest = rforest
 
     def _build(self):
         self._children = [DistanceTree(self.lforest.except_head_forest, self.rforest, self)]
-
-    def calculate(self):
-        super().calculate()
-        self._children = []
 
 
 class RightDistanceTree(LeftDistanceTree):

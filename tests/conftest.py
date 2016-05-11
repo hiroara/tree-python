@@ -46,3 +46,12 @@ def tree4():
             }
         }
     })
+
+
+@pytest.fixture
+def tree5():
+    return build_tree({
+        'a': {
+            'b': 1
+        }
+    })
