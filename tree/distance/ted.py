@@ -54,15 +54,15 @@ class Forest:
         return self.indexer.index(next(postorder(self.head)))
 
 
-def distance(tree1, tree2):
-    return Distance(tree1, tree2).calculate()
+def distance(tree1, tree2, cost=None):
+    return Distance(tree1, tree2, cost=cost).calculate()
 
 
 class Distance:
-    def __init__(self, ltree, rtree):
+    def __init__(self, ltree, rtree, cost=None):
         lforest = Forest(ltree, postorder(ltree).indexer(), (0, len(ltree)))
         rforest = Forest(rtree, postorder(rtree).indexer(), (0, len(rtree)))
-        self.tree = DistanceTree(lforest, rforest, None)
+        self.tree = DistanceTree(lforest, rforest, None, cost=cost)
 
     def calculate(self):
         for node in self.tree:
@@ -71,13 +71,14 @@ class Distance:
 
 
 class CalculationTree:
-    def __init__(self, parent, cache_key):
+    def __init__(self, parent, cache_key, cost=None):
         self.cache_key = '/'.join([type(self).__name__, cache_key])
         self.cache = parent.cache if parent else {}
         self.__value = self.cache[self.cache_key] if self.cache_key in self.cache else None
         self.parent = parent
         self.built = False
         self._children = []
+        self._cost = cost if parent is None else parent._cost
 
     def build(self):
         if self.built:
@@ -107,8 +108,8 @@ class CalculationTree:
 
 
 class DistanceTree(CalculationTree):
-    def __init__(self, lforest, rforest, parent):
-        super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
+    def __init__(self, lforest, rforest, parent, cost=None):
+        super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]), cost=cost)
         self.lforest = lforest
         self.rforest = rforest
 
@@ -136,7 +137,9 @@ class CostSummingTree(CalculationTree):
             self.value = self.cost + sum(child.value for child in self.children)
             self._children = []
 
-    def _cost(self, lforest, rforest):
+    def _calc_cost(self, lforest, rforest):
+        if self._cost is not None:
+            return self._cost(lforest.head, rforest.head)
         if lforest.head is None and rforest.head is None:
             return 0
         elif lforest.head is None or rforest.head is None:
@@ -148,7 +151,7 @@ class CostSummingTree(CalculationTree):
 class HeadDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
         super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
-        self.cost = self._cost(lforest, rforest)
+        self.cost = self._calc_cost(lforest, rforest)
         self.lforest = lforest
         self.rforest = rforest
 
@@ -162,7 +165,7 @@ class HeadDistanceTree(CostSummingTree):
 class LeftDistanceTree(CostSummingTree):
     def __init__(self, lforest, rforest, parent):
         super().__init__(parent, '/'.join([lforest.cache_key, rforest.cache_key]))
-        self.cost = self._cost(lforest, rforest.child())
+        self.cost = self._calc_cost(lforest, rforest.child())
         self.lforest = lforest
         self.rforest = rforest
 
