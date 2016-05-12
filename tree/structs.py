@@ -8,6 +8,9 @@ class Node:
     def get_child(self, key):
         return NoneNode()
 
+    def keys(self):
+        return []
+
     def __str__(self):
         return "<{}>".format(self.value)
 
@@ -19,6 +22,9 @@ class Node:
 
     def __hash__(self):
         return 19 + hash(self.value)
+
+    def __getitem__(self, key):
+        return self.get_child(key)
 
 
 class Tree(Node):
@@ -33,6 +39,9 @@ class Tree(Node):
 
     def get_child(self, key):
         return next((node for node in self.children if node.value == key), NoneNode())
+
+    def keys(self):
+        return [child.value for child in self.children]
 
     def __str__(self):
         return '<T: {} (with {} nodes)>'.format(self.value, len(self.children))
