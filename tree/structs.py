@@ -1,4 +1,5 @@
 from functools import reduce
+from collections import KeysView
 
 
 class Node:
@@ -9,7 +10,7 @@ class Node:
         return NoneNode()
 
     def keys(self):
-        return []
+        return KeysView([])
 
     def __str__(self):
         return "<{}>".format(self.value)
@@ -41,7 +42,7 @@ class Tree(Node):
         return next((node for node in self.children if node.value == key), NoneNode())
 
     def keys(self):
-        return [child.value for child in self.children]
+        return KeysView([child.value for child in self.children])
 
     def __str__(self):
         return '<T: {} (with {} nodes)>'.format(self.value, len(self.children))
